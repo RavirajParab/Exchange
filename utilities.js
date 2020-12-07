@@ -2,11 +2,10 @@
 const fetch = require('node-fetch');
 const shortSymbols = require('./short.json');
 const {data} = require('./data');
-const dt= "2020-12-07T04:40:00.000Z"
-const startTime =new Date(new Date((new Date).toDateString()).setHours(10,10,0,0));
-const slfactor =0.007;
-const targetfactor=0.008;
+const slfactor =0.006;
+const targetfactor=0.007;
 const inv=100000;
+const taxFactor =0.000415;
 
 const getExchangeData =()=>{
     console.log('Getting exchange data');
@@ -37,8 +36,9 @@ const getPLForSymbol =async (i)=>{
                     Type :'SL Hit',
                     SP : shp,
                     Price : element.lp,
-                    PL : Math.round(qty*(shp-sl)),
-                    Timing : timeSLHitLocal
+                    PL : Math.round(qty*(shp-sl)-taxFactor*2*inv),
+                    Timing : timeSLHitLocal,
+                    Qty :qty
                 })  ;         
                // break;
             }else if(element.lp<=target){
@@ -49,8 +49,9 @@ const getPLForSymbol =async (i)=>{
                     Type :'Target Hit',
                     SP : shp,
                     Price : element.lp,
-                    PL : Math.round(qty*(shp-target)),
-                    Timing : timeTargetHitLocal
+                    PL : Math.round(qty*(shp-target)-taxFactor*2*inv),
+                    Timing : timeTargetHitLocal,
+                    Qty :qty
                 })  ;    
                // break;
             }else{
@@ -62,8 +63,9 @@ const getPLForSymbol =async (i)=>{
                         Type :'Closing',
                         SP : shp,
                         Price : element.lp,
-                        PL : Math.round(qty*(shp-element.lp)),
-                        Timing : timeLocal
+                        PL : Math.round(qty*(shp-element.lp) - taxFactor*2*inv),
+                        Timing : timeLocal,
+                        Qty :qty
                     })  ;  
                    // break;
                 }
@@ -77,6 +79,17 @@ const evaluateShorts=async ()=>{
    // loop for sidShorts
    const PlProms=sidShorts.map(x=>getPLForSymbol(x));
    const PlRes = await Promise.all(PlProms);
+   // Build BO table
+   const BOTable = PlRes.map(i=>{
+        return {
+            Symbol : i.Symbol,
+            SL : (i.SP*slfactor).toFixed(1),
+            Target : (i.SP*targetfactor).toFixed(1),
+            Price : i.SP,
+            Qty : i.Qty
+        }
+   });
+   console.table(BOTable);
    console.table(PlRes);
    const tpl = PlRes.reduce((sum,o)=>sum+o.PL,0);
    console.log(`Total PL is : ${tpl}`);
