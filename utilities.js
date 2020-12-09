@@ -2,8 +2,8 @@
 const fetch = require('node-fetch');
 const shortSymbols = require('./short.json');
 const {data} = require('./data');
-const slfactor =0.006;
-const targetfactor=0.007;
+const slfactor =0.005;
+const targetfactor=0.009;
 const inv=100000;
 const taxFactor =0.000415;
 
