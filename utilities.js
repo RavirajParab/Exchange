@@ -19,15 +19,20 @@ const getPLForSymbol =async (i)=>{
             const sidProm = await fetch(intraDataUrl);
             const sidData = await sidProm.json();
             //new logic
-            const fi=sidData.data[0].points.findIndex(i=>i.ts.split('T')[1]==="04:40:00.000Z");
+            let fi=sidData.data[0].points.findIndex(i=>i.ts.split('T')[1]==="04:45:00.000Z");
+            if(fi==-1){
+                fi=0;
+            }
+            
+            
             const fid=sidData.data[0].points.slice(fi);
             const si = fid.findIndex(i=>i.ts.split('T')[1]==="09:00:00.000Z");
-            if(si>=-1){
+            if(si>-1){
                 fid.splice(si-fid.length+1);
                // console.log(fid[0]);
                // console.log(fid[fid.length-1]);
             }
-            
+           
             
             //find the shorting Price
             const shp= fid[0].lp;
