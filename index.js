@@ -5,26 +5,26 @@ const utilities =require('./utilities');
 
 
 // set the yargs commands
-const argv = yargs.command('fetch','Fetches the stock prices from ticker',{})
+const argv = yargs.command('timing','Fetches the best timing for shorting',{})
                   .command('short','Evaluates your short strategy',{})
                  .help()
                  .argv;
 
 //put the ursl here
 const command =argv._[0];
-if(command==='fetch'){
-    const confirm = new Confirm('Do you want to fetch secutity data?')
+if(command==='timing'){
+    new Confirm('Do you want to find best timing for shorting?')
     .ask((answer)=> {
       if(answer){
           //do that activity
-         utilities.getExchangeData();
+         utilities.getTiming();
       }else{
           console.log('Exiting.....');
           process.exit(0);
       }
     });
 }if(command==='short'){
-    const confirm = new Confirm('Do you want to begin short evaluation?')
+    new Confirm('Do you want to begin short evaluation?')
     .ask((answer)=> {
       if(answer){
           //do that activity

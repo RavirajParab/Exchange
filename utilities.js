@@ -1,14 +1,39 @@
 //imports
 const fetch = require('node-fetch');
+const {RSI} =require('technicalindicators');
 const shortSymbols = require('./short.json');
 const {data} = require('./data');
 const slfactor =0.005;
 const targetfactor=0.009;
 const inv=100000;
 const taxFactor =0.000415;
+const rsiPeriod =14;
+//const startingTime ="04:40:00.000Z";
+//const endingTime ="09:00:00.000Z";
+const startingTime ="05:35:00.000Z";
+const endingTime ="10:00:00.000Z";
 
-const getExchangeData =()=>{
-    console.log('Getting exchange data');
+const getTiming =async ()=>{
+    const nif200Url = `https://api.tickertape.in/stocks/charts/intra/.NIFTY200`;
+    const nifProm = await fetch(nif200Url);
+    const nifData = await nifProm.json();
+    const dataPoints = nifData.data[0].points;
+    const inputRSI ={
+        values : dataPoints.map(i=>i.lp),
+        period:rsiPeriod
+    }
+    const result = RSI.calculate(inputRSI);
+    const compositeRSIData = result.map((i,index)=>{
+        return {
+            RSI : i,
+            TS : new Date(dataPoints[index+rsiPeriod].ts).toLocaleTimeString(),
+            TSZ : dataPoints[index+rsiPeriod].ts,
+            LP : dataPoints[index+rsiPeriod].lp
+        }
+    });
+    const shortTingOpps = compositeRSIData.filter(i=>i.RSI>70);
+    const buyingOpps = compositeRSIData.filter(i=>i.RSI<28);
+    
 }
 
 const getPLForSymbol =async (i)=>{
@@ -19,14 +44,14 @@ const getPLForSymbol =async (i)=>{
             const sidProm = await fetch(intraDataUrl);
             const sidData = await sidProm.json();
             //new logic
-            let fi=sidData.data[0].points.findIndex(i=>i.ts.split('T')[1]==="04:45:00.000Z");
+            let fi=sidData.data[0].points.findIndex(i=>i.ts.split('T')[1]===startingTime);
             if(fi==-1){
                 fi=0;
             }
             
             
             const fid=sidData.data[0].points.slice(fi);
-            const si = fid.findIndex(i=>i.ts.split('T')[1]==="09:00:00.000Z");
+            const si = fid.findIndex(i=>i.ts.split('T')[1]===endingTime);
             if(si>-1){
                 fid.splice(si-fid.length+1);
                // console.log(fid[0]);
@@ -91,6 +116,7 @@ const getPLForSymbol =async (i)=>{
                 }
             }
         }
+       
     }catch(err){
         console.log(`Error occured for SID ${i.Symbol} and error is ${err}`)
     }
@@ -118,6 +144,8 @@ const evaluateShorts=async ()=>{
         console.table(PlRes);
         const tpl = PlRes.reduce((sum,o)=>sum+o.PL,0);
         console.log(`Total PL is : ${tpl}`);
+        console.log(`Starting time ${new Date(`2020-12-09T${startingTime}`).toLocaleTimeString()}`);
+        console.log(`Ending time ${new Date(`2020-12-09T${endingTime}`).toLocaleTimeString()}`);
     }catch(err){
         console.log(err);
     }
@@ -126,6 +154,6 @@ const evaluateShorts=async ()=>{
 
 
 module.exports={
-    getExchangeData,
+    getTiming,
     evaluateShorts
 }
